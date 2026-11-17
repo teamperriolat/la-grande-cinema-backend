@@ -11,6 +11,7 @@
     "test": "jest --runInBand",
     "test:cov": "jest --coverage --runInBand",
     "test:e2e": "jest --config test/jest-e2e.json --runInBand",
+    "test:concurrency": "jest --config test/jest-concurrency.json --runInBand",
     "seed": "tsx prisma/seed.ts",
     "postinstall": "prisma generate"
   },

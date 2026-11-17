@@ -53,6 +53,11 @@ describe('ReservationsService', () => {
     await expect(service.create('user-1', { screeningId: 'screening-1', seatIds: ['seat-1'] })).rejects.toBeInstanceOf(ConflictException);
   });
 
+  it('convertit un conflit de transaction sérialisable en 409', async () => {
+    prisma.$transaction.mockRejectedValueOnce({ code: 'P2034' });
+    await expect(service.create('user-1', { screeningId: 'screening-1', seatIds: ['seat-1'] })).rejects.toBeInstanceOf(ConflictException);
+  });
+
   it('calcule le montant selon le nombre de sièges', async () => {
     tx.seat.findMany.mockResolvedValue([{ id: 'seat-1' }, { id: 'seat-2' }]);
     await service.create('user-1', { screeningId: 'screening-1', seatIds: ['seat-1', 'seat-2'] });
