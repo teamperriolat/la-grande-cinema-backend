@@ -50,4 +50,27 @@ export class AdminService {
       return tx.reservation.update({ where: { id }, data: { status } });
     });
   }
+
+  async analytics() {
+    const screenings = await this.prisma.screening.findMany({
+      include: {
+        movie: { select: { title: true } },
+        seats: { include: { reservationSeats: true } },
+      },
+      orderBy: { startsAt: 'asc' },
+    });
+    return screenings.map((screening) => {
+      const capacity = screening.seats.length;
+      const occupied = screening.seats.filter((seat) => seat.reservationSeats.length > 0).length;
+      return {
+        screeningId: screening.id,
+        movieTitle: screening.movie.title,
+        startsAt: screening.startsAt,
+        capacity,
+        occupied,
+        occupancyRate: capacity ? Math.round((occupied / capacity) * 10000) / 100 : 0,
+        forecastAttendance: Math.round(capacity * screening.expectedRatio),
+      };
+    });
+  }
 }
