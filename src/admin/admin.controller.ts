@@ -1,7 +1,7 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiProperty, ApiTags } from '@nestjs/swagger';
-import { Role } from '@prisma/client';
-import { IsDateString, IsInt, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
+import { ReservationStatus, Role } from '@prisma/client';
+import { IsDateString, IsEnum, IsInt, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
 import { JwtAuthGuard, Roles, RolesGuard } from '../auth/guards';
 import { AdminService } from './admin.service';
 
@@ -21,6 +21,12 @@ export class CreateScreeningDto {
   @ApiProperty({ required: false, minimum: 0, maximum: 1 }) @IsOptional() @IsNumber() @Min(0) @Max(1) expectedRatio?: number;
 }
 
+export class UpdateReservationDto {
+  @ApiProperty({ enum: ReservationStatus })
+  @IsEnum(ReservationStatus)
+  status: ReservationStatus;
+}
+
 @ApiTags('admin')
 @ApiBearerAuth()
 @Roles(Role.ADMIN)
@@ -31,4 +37,6 @@ export class AdminController {
 
   @Post('movies') createMovie(@Body() dto: CreateMovieDto) { return this.admin.createMovie(dto); }
   @Post('screenings') createScreening(@Body() dto: CreateScreeningDto) { return this.admin.createScreening(dto); }
+  @Get('reservations') reservations() { return this.admin.listReservations(); }
+  @Patch('reservations/:id') updateReservation(@Param('id') id: string, @Body() dto: UpdateReservationDto) { return this.admin.updateReservation(id, dto.status); }
 }
