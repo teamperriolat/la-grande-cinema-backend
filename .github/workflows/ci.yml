@@ -7,6 +7,23 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: cinema_test
+          POSTGRES_USER: cinema
+          POSTGRES_PASSWORD: cinema
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U cinema -d cinema_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://cinema:cinema@localhost:5432/cinema_test?schema=public
+      JWT_SECRET: ci-only-not-a-production-secret
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -17,5 +34,7 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run test:e2e
+      - run: npx prisma migrate deploy
+      - run: npm run test:concurrency
       - run: npm run test:cov
       - run: npm run build

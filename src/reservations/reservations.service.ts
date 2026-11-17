@@ -17,7 +17,7 @@ export class ReservationsService {
         return tx.reservation.create({ data: { userId, screeningId: dto.screeningId, totalCents: screening.priceCents * dto.seatIds.length, seats: { create: dto.seatIds.map(seatId => ({ seatId })) } }, include: { seats: { include: { seat: true } }, screening: { include: { movie: true } } } });
       }, { isolationLevel: 'Serializable' });
     } catch (error) {
-      if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002') throw new ConflictException('Siège déjà réservé');
+      if (typeof error === 'object' && error !== null && 'code' in error && (error.code === 'P2002' || error.code === 'P2034')) throw new ConflictException('Siège déjà réservé');
       throw error;
     }
   }
