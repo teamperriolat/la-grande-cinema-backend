@@ -1,17 +1,34 @@
 # La Grande Cinéma — Backend
 
-Ce dépôt public est destiné au futur backend de l’application de réservation de cinéma « La Grande Cinéma ».
+API minimale de réservation de cinéma avec NestJS, TypeScript, Prisma et PostgreSQL.
 
-## État du projet
+Fonctions : JWT (`USER`/`ADMIN`), films et séances, sièges disponibles, réservation atomique, billet numérique, administration, remplissage et prévision simple. Swagger est disponible sur `/docs`.
 
-Le développement de l’application n’a pas encore commencé. Aucun code applicatif, résultat de test, rapport d’analyse, déploiement ou autre preuve technique n’est fourni dans ce dépôt. Le code sera ajouté ultérieurement.
+## Lancer localement
 
-## Organisation Git
+```bash
+cp .env.example .env
+npm ci
+npx prisma db push
+npm run seed
+npm run start:dev
+```
 
-- `main` : branche stable et publiable ;
-- `develop` : branche d’intégration ;
-- branches de travail : créées depuis `develop` selon les règles décrites dans [CONTRIBUTING.md](CONTRIBUTING.md).
+Comptes de démonstration locaux uniquement :
 
-## Configuration future
+- `user@demo.cinema` / `DemoUser123!` (`USER`)
+- `admin@demo.cinema` / `DemoAdmin123!` (`ADMIN`)
 
-Le fichier `.env.example` documente uniquement les variables d’environnement envisagées. Il ne contient aucun secret et ne constitue pas la configuration d’une application existante.
+Changez ou supprimez ces comptes avant toute exposition réelle.
+
+## Vérifications
+
+```bash
+npm run lint
+npm test
+npm run test:e2e
+npm run test:cov
+npm run build
+```
+
+Les tests isolent Prisma et ne nécessitent pas de base locale. Docker n’est pas disponible sur la machine de développement actuelle ; la configuration fournie doit donc être validée sur une machine équipée de Docker.

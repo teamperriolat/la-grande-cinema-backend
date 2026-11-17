@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum ReservationStatus {
+  CONFIRMED
+  CANCELLED
+  USED
+}
+
+model User {
+  id           String        @id @default(cuid())
+  email        String        @unique
+  passwordHash String
+  role         Role          @default(USER)
+  reservations Reservation[]
+  createdAt    DateTime      @default(now())
+}
+
+model Movie {
+  id          String      @id @default(cuid())
+  title       String
+  description String
+  durationMin Int
+  posterUrl   String?
+  screenings  Screening[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model Screening {
+  id            String        @id @default(cuid())
+  movieId       String
+  movie         Movie         @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  startsAt      DateTime
+  room          String
+  priceCents    Int
+  expectedRatio Float         @default(0.6)
+  seats         Seat[]
+  reservations  Reservation[]
+  createdAt     DateTime      @default(now())
+}
+
+model Seat {
+  id               String            @id @default(cuid())
+  screeningId      String
+  screening        Screening         @relation(fields: [screeningId], references: [id], onDelete: Cascade)
+  label            String
+  reservationSeats ReservationSeat[]
+
+  @@unique([screeningId, label])
+}
+
+model Reservation {
+  id          String            @id @default(cuid())
+  ticketCode  String            @unique @default(cuid())
+  userId      String
+  user        User              @relation(fields: [userId], references: [id])
+  screeningId String
+  screening   Screening         @relation(fields: [screeningId], references: [id])
+  totalCents  Int
+  status      ReservationStatus @default(CONFIRMED)
+  seats       ReservationSeat[]
+  createdAt   DateTime          @default(now())
+}
+
+model ReservationSeat {
+  reservationId String
+  reservation   Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  seatId        String      @unique
+  seat          Seat        @relation(fields: [seatId], references: [id], onDelete: Restrict)
+
+  @@id([reservationId, seatId])
+}
