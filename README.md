@@ -1,4 +1,4 @@
-# La Grande Cinéma — Backend
+# Le Grand Cinéma — Backend
 
 API minimale de réservation de cinéma avec NestJS, TypeScript, Prisma et PostgreSQL.
 

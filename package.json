@@ -7,7 +7,7 @@
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\" \"prisma/**/*.ts\"",
     "lint": "eslint \"{src,test,prisma}/**/*.ts\"",
     "start:dev": "nest start --watch",
-    "start:prod": "node dist/main",
+    "start:prod": "node dist/src/main.js",
     "test": "jest --runInBand",
     "test:cov": "jest --coverage --runInBand",
     "test:e2e": "jest --config test/jest-e2e.json --runInBand",
