@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateMovieDto, CreateScreeningDto } from './admin.controller';
+import { ReservationStatus } from '@prisma/client';
 
 @Injectable()
 export class AdminService {
@@ -28,6 +29,25 @@ export class AdminService {
         },
       },
       include: { movie: true, seats: true },
+    });
+  }
+
+  listReservations() {
+    return this.prisma.reservation.findMany({
+      include: { user: { select: { email: true } }, screening: { include: { movie: true } }, seats: { include: { seat: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async updateReservation(id: string, status: ReservationStatus) {
+    if (!await this.prisma.reservation.findUnique({ where: { id } })) {
+      throw new NotFoundException('Réservation introuvable');
+    }
+    return this.prisma.$transaction(async (tx) => {
+      if (status === ReservationStatus.CANCELLED) {
+        await tx.reservationSeat.deleteMany({ where: { reservationId: id } });
+      }
+      return tx.reservation.update({ where: { id }, data: { status } });
     });
   }
 }
