@@ -22,4 +22,14 @@ describe('AdminService reservations', () => {
     prisma.reservation.findUnique.mockResolvedValue(null);
     await expect(service.updateReservation('missing', ReservationStatus.USED)).rejects.toBeInstanceOf(NotFoundException);
   });
+
+  it('calcule le taux de remplissage et la fréquentation estimée', async () => {
+    (prisma as any).screening = {
+      findMany: jest.fn().mockResolvedValue([{
+        id: 's1', startsAt: new Date(), expectedRatio: 0.6, movie: { title: 'Film' },
+        seats: [{ reservationSeats: [{}] }, { reservationSeats: [] }],
+      }]),
+    };
+    await expect(service.analytics()).resolves.toEqual([expect.objectContaining({ capacity: 2, occupied: 1, occupancyRate: 50, forecastAttendance: 1 })]);
+  });
 });

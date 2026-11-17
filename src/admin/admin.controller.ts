@@ -39,4 +39,5 @@ export class AdminController {
   @Post('screenings') createScreening(@Body() dto: CreateScreeningDto) { return this.admin.createScreening(dto); }
   @Get('reservations') reservations() { return this.admin.listReservations(); }
   @Patch('reservations/:id') updateReservation(@Param('id') id: string, @Body() dto: UpdateReservationDto) { return this.admin.updateReservation(id, dto.status); }
+  @Get('analytics') analytics() { return this.admin.analytics(); }
 }
