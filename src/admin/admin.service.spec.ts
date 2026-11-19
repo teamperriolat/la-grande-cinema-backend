@@ -1,4 +1,4 @@
-import { NotFoundException } from '@nestjs/common';
+import { ConflictException, NotFoundException } from '@nestjs/common';
 import { ReservationStatus } from '@prisma/client';
 import { AdminService } from './admin.service';
 
@@ -8,9 +8,20 @@ describe('AdminService', () => {
     reservation: { update: jest.fn() },
   };
   const prisma = {
-    movie: { create: jest.fn(), findUnique: jest.fn() },
-    screening: { create: jest.fn(), findMany: jest.fn() },
-    reservation: { findMany: jest.fn(), findUnique: jest.fn() },
+    movie: {
+      create: jest.fn(),
+      delete: jest.fn(),
+      findUnique: jest.fn(),
+      update: jest.fn(),
+    },
+    screening: {
+      create: jest.fn(),
+      delete: jest.fn(),
+      findMany: jest.fn(),
+      findUnique: jest.fn(),
+      update: jest.fn(),
+    },
+    reservation: { count: jest.fn(), findMany: jest.fn(), findUnique: jest.fn() },
     $transaction: jest.fn((callback: (client: typeof tx) => unknown) => callback(tx)),
   };
   const service = new AdminService(prisma as never);
@@ -23,6 +34,46 @@ describe('AdminService', () => {
 
     await expect(service.createMovie(dto)).resolves.toEqual({ id: 'movie-1', ...dto });
     expect(prisma.movie.create).toHaveBeenCalledWith({ data: dto });
+  });
+
+  it('modifie un film existant', async () => {
+    prisma.movie.findUnique.mockResolvedValue({ id: 'movie-1' });
+    prisma.movie.update.mockResolvedValue({ id: 'movie-1', title: 'Nouveau titre' });
+
+    await expect(service.updateMovie('movie-1', { title: 'Nouveau titre' })).resolves.toEqual({
+      id: 'movie-1',
+      title: 'Nouveau titre',
+    });
+    expect(prisma.movie.update).toHaveBeenCalledWith({
+      where: { id: 'movie-1' },
+      data: { title: 'Nouveau titre' },
+    });
+  });
+
+  it('supprime un film sans réservation', async () => {
+    prisma.movie.findUnique.mockResolvedValue({ id: 'movie-1' });
+    prisma.reservation.count.mockResolvedValue(0);
+    prisma.movie.delete.mockResolvedValue({ id: 'movie-1' });
+
+    await expect(service.deleteMovie('movie-1')).resolves.toEqual({ id: 'movie-1' });
+    expect(prisma.movie.delete).toHaveBeenCalledWith({ where: { id: 'movie-1' } });
+  });
+
+  it('protège un film qui possède des réservations', async () => {
+    prisma.movie.findUnique.mockResolvedValue({ id: 'movie-1' });
+    prisma.reservation.count.mockResolvedValue(1);
+
+    await expect(service.deleteMovie('movie-1')).rejects.toBeInstanceOf(ConflictException);
+    expect(prisma.movie.delete).not.toHaveBeenCalled();
+  });
+
+  it('retourne 404 pour la modification ou suppression d’un film inconnu', async () => {
+    prisma.movie.findUnique.mockResolvedValue(null);
+
+    await expect(service.updateMovie('missing', { title: 'Titre' })).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+    await expect(service.deleteMovie('missing')).rejects.toBeInstanceOf(NotFoundException);
   });
 
   it('crée une séance et ses places par rangées', async () => {
@@ -56,6 +107,45 @@ describe('AdminService', () => {
         seatCount: 10,
       }),
     ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('modifie une séance existante', async () => {
+    prisma.screening.findUnique.mockResolvedValue({ id: 'screening-1' });
+    prisma.screening.update.mockResolvedValue({ id: 'screening-1', room: 'Salle 2' });
+
+    await expect(service.updateScreening('screening-1', { room: 'Salle 2' })).resolves.toEqual({
+      id: 'screening-1',
+      room: 'Salle 2',
+    });
+    expect(prisma.screening.update).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: 'screening-1' }, data: { room: 'Salle 2' } }),
+    );
+  });
+
+  it('supprime une séance sans réservation', async () => {
+    prisma.screening.findUnique.mockResolvedValue({ id: 'screening-1' });
+    prisma.reservation.count.mockResolvedValue(0);
+    prisma.screening.delete.mockResolvedValue({ id: 'screening-1' });
+
+    await expect(service.deleteScreening('screening-1')).resolves.toEqual({ id: 'screening-1' });
+    expect(prisma.screening.delete).toHaveBeenCalledWith({ where: { id: 'screening-1' } });
+  });
+
+  it('protège une séance qui possède des réservations', async () => {
+    prisma.screening.findUnique.mockResolvedValue({ id: 'screening-1' });
+    prisma.reservation.count.mockResolvedValue(1);
+
+    await expect(service.deleteScreening('screening-1')).rejects.toBeInstanceOf(ConflictException);
+    expect(prisma.screening.delete).not.toHaveBeenCalled();
+  });
+
+  it('retourne 404 pour une séance inconnue', async () => {
+    prisma.screening.findUnique.mockResolvedValue(null);
+
+    await expect(service.updateScreening('missing', { room: 'Salle 2' })).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+    await expect(service.deleteScreening('missing')).rejects.toBeInstanceOf(NotFoundException);
   });
 
   it('liste les réservations récentes', async () => {
