@@ -9,7 +9,8 @@ Fonctions : JWT (`USER`/`ADMIN`), films et séances, sièges disponibles, réser
 ```bash
 cp .env.example .env
 npm ci
-npx prisma db push
+npm run prisma:generate
+npm run prisma:migrate
 npm run seed
 npm run start:dev
 ```
@@ -25,10 +26,11 @@ Changez ou supprimez ces comptes avant toute exposition réelle.
 
 ```bash
 npm run lint
+npm run prisma:validate
 npm test
 npm run test:e2e
 npm run test:cov
 npm run build
 ```
 
-Les tests isolent Prisma et ne nécessitent pas de base locale. Docker n’est pas disponible sur la machine de développement actuelle ; la configuration fournie doit donc être validée sur une machine équipée de Docker.
+Les tests unitaires isolent Prisma et ne nécessitent pas de base locale. Le test de concurrence utilise PostgreSQL dans la CI. Le schéma est appliqué exclusivement avec les migrations versionnées de `prisma/migrations` afin que la base locale, la CI et la production restent identiques.

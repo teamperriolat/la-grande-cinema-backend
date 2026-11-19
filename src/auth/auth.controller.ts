@@ -6,8 +6,11 @@ export class LoginDto {
   @ApiProperty({ example: 'user@demo.cinema' }) @IsEmail() email: string;
   @ApiProperty({ example: 'DemoUser123!' }) @IsString() @MinLength(8) password: string;
 }
-@ApiTags('auth') @Controller('auth')
+@ApiTags('auth')
+@Controller('auth')
 export class AuthController {
   constructor(private readonly auth: AuthService) {}
-  @Post('login') login(@Body() dto: LoginDto) { return this.auth.login(dto); }
+  @Post('login') login(@Body() dto: LoginDto) {
+    return this.auth.login(dto);
+  }
 }

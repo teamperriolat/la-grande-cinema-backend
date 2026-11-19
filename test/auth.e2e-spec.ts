@@ -11,10 +11,16 @@ describe('Auth HTTP integration', () => {
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
       controllers: [AuthController],
-      providers: [{
-        provide: AuthService,
-        useValue: { login: jest.fn().mockResolvedValue({ accessToken: 'test-token', user: { role: 'USER' } }) },
-      }],
+      providers: [
+        {
+          provide: AuthService,
+          useValue: {
+            login: jest
+              .fn()
+              .mockResolvedValue({ accessToken: 'test-token', user: { role: 'USER' } }),
+          },
+        },
+      ],
     }).compile();
     app = moduleRef.createNestApplication();
     await app.init();
