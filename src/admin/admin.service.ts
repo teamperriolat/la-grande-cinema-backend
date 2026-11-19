@@ -1,6 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateMovieDto, CreateScreeningDto } from './admin.controller';
+import {
+  CreateMovieDto,
+  CreateScreeningDto,
+  UpdateMovieDto,
+  UpdateScreeningDto,
+} from './admin.controller';
 import { ReservationStatus } from '@prisma/client';
 
 @Injectable()
@@ -9,6 +14,26 @@ export class AdminService {
 
   createMovie(dto: CreateMovieDto) {
     return this.prisma.movie.create({ data: dto });
+  }
+
+  async updateMovie(id: string, dto: UpdateMovieDto) {
+    if (!(await this.prisma.movie.findUnique({ where: { id } }))) {
+      throw new NotFoundException('Film introuvable');
+    }
+    return this.prisma.movie.update({ where: { id }, data: dto });
+  }
+
+  async deleteMovie(id: string) {
+    if (!(await this.prisma.movie.findUnique({ where: { id } }))) {
+      throw new NotFoundException('Film introuvable');
+    }
+    const reservationCount = await this.prisma.reservation.count({
+      where: { screening: { movieId: id } },
+    });
+    if (reservationCount > 0) {
+      throw new ConflictException('Impossible de supprimer un film avec des réservations');
+    }
+    return this.prisma.movie.delete({ where: { id } });
   }
 
   async createScreening(dto: CreateScreeningDto) {
@@ -30,6 +55,35 @@ export class AdminService {
       },
       include: { movie: true, seats: true },
     });
+  }
+
+  async updateScreening(id: string, dto: UpdateScreeningDto) {
+    if (!(await this.prisma.screening.findUnique({ where: { id } }))) {
+      throw new NotFoundException('Séance introuvable');
+    }
+    if (dto.movieId && !(await this.prisma.movie.findUnique({ where: { id: dto.movieId } }))) {
+      throw new NotFoundException('Film introuvable');
+    }
+    const { startsAt, ...data } = dto;
+    return this.prisma.screening.update({
+      where: { id },
+      data: {
+        ...data,
+        ...(startsAt ? { startsAt: new Date(startsAt) } : {}),
+      },
+      include: { movie: true, seats: true },
+    });
+  }
+
+  async deleteScreening(id: string) {
+    if (!(await this.prisma.screening.findUnique({ where: { id } }))) {
+      throw new NotFoundException('Séance introuvable');
+    }
+    const reservationCount = await this.prisma.reservation.count({ where: { screeningId: id } });
+    if (reservationCount > 0) {
+      throw new ConflictException('Impossible de supprimer une séance avec des réservations');
+    }
+    return this.prisma.screening.delete({ where: { id } });
   }
 
   listReservations() {
