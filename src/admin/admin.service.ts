@@ -12,7 +12,7 @@ export class AdminService {
   }
 
   async createScreening(dto: CreateScreeningDto) {
-    if (!await this.prisma.movie.findUnique({ where: { id: dto.movieId } })) {
+    if (!(await this.prisma.movie.findUnique({ where: { id: dto.movieId } }))) {
       throw new NotFoundException('Film introuvable');
     }
     return this.prisma.screening.create({
@@ -34,13 +34,17 @@ export class AdminService {
 
   listReservations() {
     return this.prisma.reservation.findMany({
-      include: { user: { select: { email: true } }, screening: { include: { movie: true } }, seats: { include: { seat: true } } },
+      include: {
+        user: { select: { email: true } },
+        screening: { include: { movie: true } },
+        seats: { include: { seat: true } },
+      },
       orderBy: { createdAt: 'desc' },
     });
   }
 
   async updateReservation(id: string, status: ReservationStatus) {
-    if (!await this.prisma.reservation.findUnique({ where: { id } })) {
+    if (!(await this.prisma.reservation.findUnique({ where: { id } }))) {
       throw new NotFoundException('Réservation introuvable');
     }
     return this.prisma.$transaction(async (tx) => {
